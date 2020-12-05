@@ -34,6 +34,17 @@ def evaluate(ex)
         else  
           raise "Unknown comparison type"  
       end  
+    
+    
+    
+    when IfExpression
+      cond = evaluate(ex.condition)
+      if(cond.b)
+        return evaluate(ex.thenSide)
+      else
+        return evaluate(ex.elseSide)
+      end
+    
     end
 
 end
@@ -82,7 +93,6 @@ class BinaryOperationExpression < Expression
     @right = right
   end
 end
-
 class ComparisonExpression < Expression
   module TYPE
     EQ = "=="
@@ -103,6 +113,25 @@ class ComparisonExpression < Expression
     @right = right
   end
 end 
+class IfExpression < Expression
+
+  def condition
+    @condition
+  end
+  def thenSide
+    @thenSide
+  end
+  def elseSide
+    @elseSide
+  end 
+
+  def initialize( condition, thenSide, elseSide)
+    @condition = condition
+    @thenSide = thenSide
+    @elseSide = elseSide
+  end
+
+end  
 # values
 class Value
 end
@@ -167,3 +196,16 @@ p3 = ComparisonExpression.new(
 )
 puts 'p3'
 puts evaluate(p3)
+
+# if (((400 + 74) / 3) == 158) then 474 else 474/0
+p4 = IfExpression.new(
+  p3,
+  IntConstant.new(474),
+  BinaryOperationExpression.new(
+    BinaryOperationExpression::Operator::DIV,
+    IntConstant.new(474),
+    IntConstant.new(0)
+  )
+)
+puts 'p4'
+puts evaluate(p4)
