@@ -1,5 +1,5 @@
 
-def evaluate(ex)
+def evaluate(ex, envi)
   
   case ex
     when IntConstant    
@@ -7,10 +7,9 @@ def evaluate(ex)
     when BooleanConstant    
       return BooleanValue.new(ex.c)
     when BinaryOperationExpression
-
-      leftValue = IntValue.new(evaluate(ex.left)).v
-      rightValue = IntValue.new(evaluate(ex.right)).v
-
+      leftValue = IntValue.new(evaluate(ex.left,envi)).v
+      rightValue = IntValue.new(evaluate(ex.right,envi)).v
+      
       case ex.op
         when BinaryOperationExpression::Operator::PLUS
           return IntValue.new(leftValue.v + rightValue.v)
@@ -24,8 +23,8 @@ def evaluate(ex)
           raise "Unkown Binary Operation"
       end
     when ComparisonExpression
-      left = evaluate(ex.left).v
-      right = evaluate(ex.right).v
+      left = evaluate(ex.left,envi).v
+      right = evaluate(ex.right,envi).v
 
       case ex.type
         when ComparisonExpression::TYPE::EQ
@@ -38,15 +37,21 @@ def evaluate(ex)
     
     
     when IfExpression
-      cond = evaluate(ex.condition)
+      cond = evaluate(ex.condition,envi)
       if(cond.b)
-        return evaluate(ex.thenSide)
+        return evaluate(ex.thenSide,envi)
       else
-        return evaluate(ex.elseSide)
+        return evaluate(ex.elseSide,envi)
       end
-    
-    end
+    when LetExpression
+      v = evaluate(ex.value, envi)
+      envi.bind(ex.variable, v)
+      return evaluate(ex.body, envi)
+    when VariableExpression
+      return envi.lookup(ex.variable)
 
+
+    end    
 end
 
 
@@ -132,6 +137,34 @@ class IfExpression < Expression
   end
 
 end  
+class LetExpression < Expression
+  
+  def variable
+    @variable
+  end
+  def value
+    @value
+  end
+  def body
+    @body
+  end 
+
+  def initialize(variable, value, body)
+    @variable = variable
+    @value = value
+    @body = body
+  end
+end 
+class VariableExpression < Expression
+  def variable
+    @variable
+  end
+  
+  def initialize (variable)
+    @variable = variable
+  end
+end
+
 # values
 class Value
 end
@@ -163,11 +196,77 @@ class BooleanValue < Value
 end
 
 
+
+class Bindings
+  def name
+    @name
+  end
+  def value
+    @value
+  end
+  def initialize(name, value)
+    @name = name
+    @value = value
+  end
+
+  def to_s
+    return '{' + "name=" + "#{@name}" + ', value=' +"#{@value}" + '}'
+  end
+end
+
+class Environmnet
+  BINDS = []
+
+  def lookup (name)
+    BINDS.each do |item|
+      if (item.name.equals(name))
+        return item.value
+      end
+    end
+  end
+
+  def to_s
+    return 'Environmnet{' + "#{BINDS}" +'}'
+  end
+
+end
+class DynamicScopedEnvironment < Environmnet
+  def bind (name, value)
+    BINDS.unshift(Bindings.new(name, value))
+  end
+end
+
+
+class Name
+  def theName
+    @theName
+  end
+
+  def initialize (theName)
+    @theName = theName
+  end
+
+  def equals (nameclass)
+
+    if(self == nameclass)
+      return true
+    end
+    if(nameclass == nil || self.class != nameclass.class)
+      return false
+    end
+    return self.class == nameclass.class
+    
+  end
+
+end
+
+
+envi = DynamicScopedEnvironment.new
 # Problems
 # 474
 p1 = IntConstant.new(474)
 puts 'p1'
-puts evaluate(p1)
+puts evaluate(p1,envi)
 
 # (400 + 74) / 3
 p2 = BinaryOperationExpression.new(
@@ -179,7 +278,7 @@ p2 = BinaryOperationExpression.new(
   IntConstant.new(3)
 )
 puts 'p2'
-puts evaluate(p2)
+puts evaluate(p2,envi)
 
 #((400 + 74) / 3) == 158
 p3 = ComparisonExpression.new(
@@ -195,7 +294,7 @@ p3 = ComparisonExpression.new(
   IntConstant.new(158)
 )
 puts 'p3'
-puts evaluate(p3)
+puts evaluate(p3,envi)
 
 # if (((400 + 74) / 3) == 158) then 474 else 474/0
 p4 = IfExpression.new(
@@ -208,4 +307,34 @@ p4 = IfExpression.new(
   )
 )
 puts 'p4'
-puts evaluate(p4)
+puts evaluate(p4,envi)
+
+#let bot = 3 in
+#   (let bot = 2 in bot)
+#   +
+#   (if (bot == 0) then 474/0 else (400+74)/b
+
+
+# }
+#   let x = 10
+# { let x = 20
+#   x -> Always 20
+# }
+#  + x -> 10 on lexical scoping, 20 on dynamic scoping
+# }
+p5 = LetExpression.new(
+  Name.new('x'),
+  IntConstant.new(10),
+  BinaryOperationExpression.new(
+    BinaryOperationExpression::Operator::PLUS,
+    LetExpression.new(
+      Name.new('x'),
+      IntConstant.new(20),
+      VariableExpression.new(Name.new('x'))
+    ),
+    VariableExpression.new(Name.new('x'))
+  )
+)
+puts 'p5'
+puts evaluate(p5,envi)
+
