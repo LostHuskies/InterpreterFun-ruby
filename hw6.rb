@@ -4,7 +4,8 @@ def evaluate(ex)
   case ex
     when IntConstant    
       return IntValue.new(ex.c)
-
+    when BooleanConstant    
+      return BooleanValue.new(ex.c)
     when BinaryOperationExpression
 
       leftValue = IntValue.new(evaluate(ex.left)).v
@@ -22,9 +23,18 @@ def evaluate(ex)
         else
           raise "Unkown Binary Operation"
       end
-    
+    when ComparisonExpression
+      left = evaluate(ex.left).v
+      right = evaluate(ex.right).v
 
-  end
+      case ex.type
+        when ComparisonExpression::TYPE::EQ
+          result = IntValue.new(left).v == IntValue.new(right).v
+          return BooleanValue.new(result)
+        else  
+          raise "Unknown comparison type"  
+      end  
+    end
 
 end
 
@@ -32,6 +42,14 @@ end
 class Expression
 end
 class IntConstant < Expression  
+  def c 
+    @c 
+  end
+  def initialize(c) 
+    @c = c          
+  end
+end
+class BooleanConstant < Expression  
   def c 
     @c 
   end
@@ -65,6 +83,26 @@ class BinaryOperationExpression < Expression
   end
 end
 
+class ComparisonExpression < Expression
+  module TYPE
+    EQ = "=="
+  end
+
+  def type 
+    @type 
+  end
+  def left 
+    @left 
+  end
+  def right 
+    @right 
+  end
+  def initialize(type, left, right)
+    @type = type
+    @left = left
+    @right = right
+  end
+end 
 # values
 class Value
 end
@@ -81,7 +119,19 @@ class IntValue < Value
     return 'IntValue{' + "v=" + "#{@v}" +'}'
   end
 end
+class BooleanValue < Value
+  def b
+    @b
+  end
 
+  def initialize(b)
+    @b = b
+  end
+
+  def to_s
+    return 'BooleanValue{' + "b=" + "#{@b}" +'}'
+  end
+end
 
 
 # Problems
@@ -101,3 +151,19 @@ p2 = BinaryOperationExpression.new(
 )
 puts 'p2'
 puts evaluate(p2)
+
+#((400 + 74) / 3) == 158
+p3 = ComparisonExpression.new(
+  ComparisonExpression::TYPE::EQ,
+  (BinaryOperationExpression.new(
+  BinaryOperationExpression::Operator::DIV,
+  BinaryOperationExpression.new(
+    BinaryOperationExpression::Operator::PLUS,
+    IntConstant.new(400),
+    IntConstant.new(74) ),
+  IntConstant.new(3)
+  )),
+  IntConstant.new(158)
+)
+puts 'p3'
+puts evaluate(p3)
