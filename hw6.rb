@@ -312,7 +312,46 @@ puts evaluate(p4,envi)
 #let bot = 3 in
 #   (let bot = 2 in bot)
 #   +
-#   (if (bot == 0) then 474/0 else (400+74)/b
+#   (if (bot == 0) then 474/0 else (400+74)/bot
+
+p5 = LetExpression.new(
+  Name.new('bot'),
+  IntConstant.new(3),
+  BinaryOperationExpression.new(
+    BinaryOperationExpression::Operator::PLUS,
+    LetExpression.new(Name.new('bot'),
+      IntConstant.new(2),
+      VariableExpression.new(Name.new('bot'))
+    ),
+    IfExpression.new(
+      ComparisonExpression.new(
+        ComparisonExpression::TYPE::EQ,
+        VariableExpression.new(Name.new('bot')),
+        IntConstant.new(0),
+      ),
+      BinaryOperationExpression.new(
+        BinaryOperationExpression::Operator::DIV,
+        IntConstant.new(474),
+        IntConstant.new(0)
+      ),
+      BinaryOperationExpression.new(
+        BinaryOperationExpression::Operator::DIV,
+        BinaryOperationExpression.new(
+          BinaryOperationExpression::Operator::PLUS,
+          IntConstant.new(400),
+          IntConstant.new(74)
+        ),
+        VariableExpression.new(Name.new('bot'))
+      )
+    )
+  
+  )
+)
+
+puts 'p5'
+puts evaluate(p5,envi)
+
+
 
 
 # }
@@ -322,7 +361,7 @@ puts evaluate(p4,envi)
 # }
 #  + x -> 10 on lexical scoping, 20 on dynamic scoping
 # }
-p5 = LetExpression.new(
+p5b = LetExpression.new(
   Name.new('x'),
   IntConstant.new(10),
   BinaryOperationExpression.new(
@@ -335,6 +374,6 @@ p5 = LetExpression.new(
     VariableExpression.new(Name.new('x'))
   )
 )
-puts 'p5'
-puts evaluate(p5,envi)
+puts 'p5b'
+puts evaluate(p5b,envi)
 
